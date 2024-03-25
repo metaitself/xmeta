@@ -9,7 +9,9 @@ import (
 func ServerErrorInterceptor() grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp interface{}, err error) {
 		resp, err = handler(ctx, req)
-		merr := metaerror.FromError(err).GRPCStatus().Err()
-		return resp, merr
+		if err != nil {
+			err = metaerror.FromError(err).GRPCStatus().Err()
+		}
+		return resp, err
 	}
 }
