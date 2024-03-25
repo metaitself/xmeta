@@ -56,6 +56,8 @@ func (e *MetaError) StatusCode() int32 {
 	return e.Status
 }
 
+func (e *MetaError) ErrMessage() string { return e.Message }
+
 // WithCause with the underlying cause of the error.
 func (e *MetaError) WithCause(cause error) *MetaError {
 	err := Clone(e)
