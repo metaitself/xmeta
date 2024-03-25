@@ -15,11 +15,19 @@ var (
 	NewEncoder = json.NewEncoder
 )
 
-func MarshalToString(v any) (string, error) {
+func MarshalToString(v any) string {
+	marshal, err := Marshal(v)
+	if err != nil {
+		return "{}"
+	}
+	return string(marshal)
+}
+
+func MarshalToStringE(v any) (string, error) {
 	marshal, err := Marshal(v)
 	return string(marshal), err
 }
 
-func UnmarshalFromString(buf string, v any) error {
+func UnmarshalFromStringE(buf string, v any) error {
 	return Unmarshal([]byte(buf), v)
 }

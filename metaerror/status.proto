@@ -1,0 +1,13 @@
+syntax = "proto3";
+
+package metaerror;
+
+option go_package = "/metaerror";
+
+message MetaStatus {
+  int32  code = 1;
+  int32  status = 2;
+  string reason = 3;
+  string message = 4;
+  map<string, string> metadata = 5;
+};
