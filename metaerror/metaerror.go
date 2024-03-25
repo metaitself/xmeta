@@ -3,9 +3,7 @@ package metaerror
 import (
 	"errors"
 	"fmt"
-	"github.com/metaitself/xmeta/conv"
 	"github.com/metaitself/xmeta/encoding/json"
-	"google.golang.org/genproto/googleapis/rpc/errdetails"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"net/http"
@@ -24,11 +22,6 @@ const (
 	SupportPackageIsVersion1 = true
 )
 
-type MetaError struct {
-	MetaStatus
-	cause error
-}
-
 var (
 	_isDebug  = false
 	_encoding = "json"
@@ -38,11 +31,20 @@ func (e *MetaError) Error() string {
 	if _encoding == "" {
 		return e.Message
 	} else {
-		return json.MarshalToString(e)
+		return e.ToJSON()
 	}
 }
 
-func (e *MetaError) Unwrap() error { return e.cause }
+func (e *MetaError) ToJSON() string {
+	return json.MarshalToString(e)
+}
+
+func (e *MetaError) Unwrap() error {
+	if e.Reason == "" {
+		return nil
+	}
+	return errors.New(e.Reason)
+}
 
 // Is matches each error in the chain with the target value.
 func (e *MetaError) Is(err error) bool {
@@ -61,12 +63,8 @@ func (e *MetaError) ErrMessage() string { return e.Message }
 // WithCause with the underlying cause of the error.
 func (e *MetaError) WithCause(cause error) *MetaError {
 	err := Clone(e)
-	err.cause = cause
 	if _isDebug {
-		if err.Metadata == nil {
-			err.Metadata = map[string]string{}
-		}
-		err.Metadata["cause"] = cause.Error()
+		err.Reason = cause.Error()
 	}
 	return err
 }
@@ -87,30 +85,27 @@ func (e *MetaError) WithMetadata(md map[string]string) *MetaError {
 
 // GRPCStatus returns the Status represented by se.
 func (e *MetaError) GRPCStatus() *status.Status {
-	s, _ := status.New(httpStatusToGRPCCode(int(e.Status)), e.Message).
-		WithDetails(&errdetails.ErrorInfo{
-			Domain:   conv.ToString(e.Code),
-			Reason:   e.Reason,
-			Metadata: e.Metadata,
-		})
+	s, _ := status.New(httpStatusToGRPCCode(int(e.Status)), e.Message).WithDetails(e)
 	return s
 }
 
 // New returns an error object for the code, message.
 func New(code, status int, reason, message string) *MetaError {
 	return &MetaError{
-		MetaStatus: MetaStatus{
-			Code:    int32(code),
-			Status:  int32(status),
-			Message: message,
-			Reason:  reason,
-		},
+		Code:    int32(code),
+		Status:  int32(status),
+		Message: message,
+		Reason:  reason,
 	}
 }
 
 // Base returns an error object for the code, message and error info.
 func Base(code int, format string, a ...interface{}) *MetaError {
-	return New(code, http.StatusBadRequest, "", fmt.Sprintf(format, a...))
+	return &MetaError{
+		Code:    int32(code),
+		Status:  http.StatusBadRequest,
+		Message: fmt.Sprintf(format, a...),
+	}
 }
 
 // Code returns the code for an error.
@@ -150,13 +145,11 @@ func Clone(err *MetaError) *MetaError {
 		metadata[k] = v
 	}
 	return &MetaError{
-		cause: err.cause,
-		MetaStatus: MetaStatus{
-			Code:     err.Code,
-			Reason:   err.Reason,
-			Message:  err.Message,
-			Metadata: metadata,
-		},
+		Code:     err.Code,
+		Status:   err.Status,
+		Reason:   err.Reason,
+		Message:  err.Message,
+		Metadata: metadata,
 	}
 }
 
@@ -173,6 +166,7 @@ func FromError(err error) *MetaError {
 	if !ok {
 		return New(UnknownCode, UnknownCode, UnknownReason, err.Error())
 	}
+
 	ret := New(
 		UnknownCode,
 		httpStatusFromGRPCCode(gs.Code()),
@@ -181,18 +175,11 @@ func FromError(err error) *MetaError {
 	)
 	for _, detail := range gs.Details() {
 		switch d := detail.(type) {
-		case *errdetails.ErrorInfo:
-			ret.Reason = d.Reason
-			ret.Code = conv.ToInt32(d.Domain)
-			return ret.WithMetadata(d.Metadata)
+		case *MetaError:
+			return d
 		}
 	}
-	if ret.Metadata != nil {
-		v, ok := ret.Metadata["cause"]
-		if ok {
-			ret.cause = errors.New(v)
-		}
-	}
+
 	return ret
 }
 

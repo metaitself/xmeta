@@ -4,7 +4,7 @@ package metaerror;
 
 option go_package = "/metaerror";
 
-message MetaStatus {
+message MetaError {
   int32  code = 1;
   int32  status = 2;
   string reason = 3;
