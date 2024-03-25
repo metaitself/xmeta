@@ -99,8 +99,8 @@ func New(code, status int, reason, message string) *MetaError {
 	}
 }
 
-// Base returns an error object for the code, message and error info.
-func Base(code int, format string, a ...interface{}) *MetaError {
+// Basic returns an error object for the code, message and error info.
+func Basic(code int, format string, a ...interface{}) *MetaError {
 	return &MetaError{
 		Code:    int32(code),
 		Status:  http.StatusBadRequest,
