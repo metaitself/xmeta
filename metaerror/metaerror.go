@@ -29,7 +29,7 @@ var (
 
 func (e *MetaError) Error() string {
 	if _encoding == "" {
-		return e.Message
+		return e.Msg
 	} else {
 		return e.ToJSON()
 	}
@@ -40,16 +40,16 @@ func (e *MetaError) ToJSON() string {
 }
 
 func (e *MetaError) Unwrap() error {
-	if e.Reason == "" {
+	if e.Cause == "" {
 		return nil
 	}
-	return errors.New(e.Reason)
+	return errors.New(e.Cause)
 }
 
 // Is matches each error in the chain with the target value.
 func (e *MetaError) Is(err error) bool {
 	if se := new(MetaError); errors.As(err, &se) {
-		return se.Code == e.Code && se.Reason == e.Reason
+		return se.Code == e.Code
 	}
 	return false
 }
@@ -58,13 +58,16 @@ func (e *MetaError) StatusCode() int32 {
 	return e.Status
 }
 
-func (e *MetaError) ErrMessage() string { return e.Message }
+func (e *MetaError) ErrMessage() string { return e.Msg }
 
 // WithCause with the underlying cause of the error.
 func (e *MetaError) WithCause(cause error) *MetaError {
+	if cause == nil {
+		return e
+	}
 	err := Clone(e)
 	if _isDebug {
-		err.Reason = cause.Error()
+		err.Cause = cause.Error()
 	}
 	return err
 }
@@ -85,26 +88,26 @@ func (e *MetaError) WithMetadata(md map[string]string) *MetaError {
 
 // GRPCStatus returns the Status represented by se.
 func (e *MetaError) GRPCStatus() *status.Status {
-	s, _ := status.New(httpStatusToGRPCCode(int(e.Status)), e.Message).WithDetails(e)
+	s, _ := status.New(httpStatusToGRPCCode(int(e.Status)), e.Msg).WithDetails(e)
 	return s
 }
 
 // New returns an error object for the code, message.
 func New(code, status int, reason, message string) *MetaError {
 	return &MetaError{
-		Code:    int32(code),
-		Status:  int32(status),
-		Message: message,
-		Reason:  reason,
+		Code:   int32(code),
+		Status: int32(status),
+		Msg:    message,
+		Reason: reason,
 	}
 }
 
 // Basic returns an error object for the code, message and error info.
 func Basic(code int, format string, a ...interface{}) *MetaError {
 	return &MetaError{
-		Code:    int32(code),
-		Status:  http.StatusBadRequest,
-		Message: fmt.Sprintf(format, a...),
+		Code:   int32(code),
+		Status: http.StatusBadRequest,
+		Msg:    fmt.Sprintf(format, a...),
 	}
 }
 
@@ -148,7 +151,7 @@ func Clone(err *MetaError) *MetaError {
 		Code:     err.Code,
 		Status:   err.Status,
 		Reason:   err.Reason,
-		Message:  err.Message,
+		Msg:      err.Msg,
 		Metadata: metadata,
 	}
 }
