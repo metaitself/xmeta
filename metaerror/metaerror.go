@@ -60,6 +60,14 @@ func (e *MetaError) StatusCode() int32 {
 
 func (e *MetaError) ErrMessage() string { return e.Msg }
 
+func (e *MetaError) WithMessage(format string, a ...interface{}) *MetaError {
+	return &MetaError{
+		Code:          e.Code,
+		Status:        e.Status,
+		Msg:           fmt.Sprintf(format, a...),
+	}
+}
+
 // WithCause with the underlying cause of the error.
 func (e *MetaError) WithCause(cause error) *MetaError {
 	if cause == nil {

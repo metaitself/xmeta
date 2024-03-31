@@ -28,6 +28,14 @@ func MarshalToStringE(v any) (string, error) {
 	return string(marshal), err
 }
 
+func MarshalToByte(v any) []byte {
+	marshal, err := Marshal(v)
+	if err != nil {
+		return []byte("{}")
+	}
+	return marshal
+}
+
 func UnmarshalFromStringE(buf string, v any) error {
 	return Unmarshal([]byte(buf), v)
 }

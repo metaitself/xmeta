@@ -13,8 +13,20 @@ func GetTimeNano() int64 {
 	return time.Now().UnixNano()
 }
 
-func TimestampAddSecond(sec int32) int64 {
+func TimestampAddSecond(sec int) int64 {
 	return GetTimestamp() + int64(sec*1000)
+}
+
+func TimestampAddMinute(v int) int64 {
+	return time.Now().Add(time.Minute *  time.Duration(v)).UnixMilli()
+}
+
+func TimestampAddHour(v int) int64 {
+	return time.Now().Add(time.Hour *  time.Duration(v)).UnixMilli()
+}
+
+func TimestampAddDay(day int) int64 {
+	return time.Now().AddDate(0, 0, day).UnixMilli()
 }
 
 func FormatSeconds(seconds int) string {
