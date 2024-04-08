@@ -13,16 +13,28 @@ func GetTimeNano() int64 {
 	return time.Now().UnixNano()
 }
 
+func GetTodayStartTimestamp() int64 {
+	t := time.Now()
+	addTime := time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, t.Location())
+	return addTime.UnixMilli()
+}
+
+func GetYesterdayStartTimestamp() int64 {
+	ts := time.Now().AddDate(0, 0, -1)
+	ys := time.Date(ts.Year(), ts.Month(), ts.Day(), 0, 0, 0, 0, ts.Location())
+	return ys.UnixMilli()
+}
+
 func TimestampAddSecond(sec int) int64 {
 	return GetTimestamp() + int64(sec*1000)
 }
 
 func TimestampAddMinute(v int) int64 {
-	return time.Now().Add(time.Minute *  time.Duration(v)).UnixMilli()
+	return time.Now().Add(time.Minute * time.Duration(v)).UnixMilli()
 }
 
 func TimestampAddHour(v int) int64 {
-	return time.Now().Add(time.Hour *  time.Duration(v)).UnixMilli()
+	return time.Now().Add(time.Hour * time.Duration(v)).UnixMilli()
 }
 
 func TimestampAddDay(day int) int64 {
