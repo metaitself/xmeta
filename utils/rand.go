@@ -15,6 +15,11 @@ func RandomInt(min int, max int) int {
 	return min + r.Intn(max-min)
 }
 
+func RandomInt32(min int32, max int32) int32 {
+	r := rand.New(rand.NewSource(time.Now().UnixNano()))
+	return min + int32(r.Intn(int(max-min)))
+}
+
 func RandomIntN(length int) int {
 	r := rand.New(rand.NewSource(time.Now().UnixNano()))
 	// 生成随机数 长度为length
